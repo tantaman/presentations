@@ -72,23 +72,19 @@ function IssueList({workspace}) {
 }
 ```
 
-As the state in the database changes, the `IssueList` should automatically render the update without us doing anything.
+As the state in the database changes, the `IssueList` should automatically render the update without us doing anything. No refresh. No re-running the query.
 
 ---
 
-# Signals
+# Introducing IVM
 
-![width:900px center](./signals2.png)
-
----
-
-# Problem
-
-- Signals are a good start (reactive, only run sub-graphs) but...
-- They're not incremental over collections
+- Think of it as:
+  - A data dependency graph (like signals) plus
+  - Incremental computation over collections
+- E.g., `map` / `reduce` / `filter` but without making copies and by only running compute over modified items
 
 ---
-# Example
+# Without IVM
 
 ```ts
 x.map(..).filter(..).reduce(..);
@@ -97,25 +93,17 @@ x.map(..).filter(..).reduce(..);
 ## Any modification to `x` results in `N` array copies.
 
 ---
-# Example 2
+# Without IVM
 ```ts
 const issues = Array.from({length: 100_000}, genIssues);
 const fooIssues = issues.filter((issue) => /.*foo.*/.test(issue.title));
 ```
 
-## Any modification of `issues` re-scans `100k` items
-- won't scale having to many such queries
+## Any modification of `issues` re-scans `100_000` items
 
 ---
 
-# Incremental Computation Allows...
-
-1. Arbitrarily complex queries over collections
-2. Arbitrarily deep compute pipelines
-
----
-
-# Basic Implementation
+# Implementing IVM
 
 ---
 
@@ -129,12 +117,12 @@ E.g., the `x` in `x.map.filter.reduce`
 E.g., `map` / `filter` / `reduce` / `join`
 - **View** - the final result of a pipeline.
 E.g., `const view = x.map.filter.reduce`
-- **Difference** - a change to a source or view
+- **Difference** - a change sent through the pipeline
 
 ---
 
 # Simple Pipeline
-`numbers.map(x => x*2)`
+`doubled = numbers.map(x => x*2)`
 
 ![width:250px center](./map-pipeline.png)
 
@@ -162,14 +150,23 @@ E.g., `const view = x.map.filter.reduce`
 - Options:
   1. Make the `source` and `view` each a `Map<K, V>` to associate items with a key
   2. Make the `source` and `view` take a `comparator<S, V>`
-- Option (1): Diffs take the form of `[key, value]`
-- Option (2): Diffs are still just the `value`
+- Option (1): Diff events take the form of `[key, value]`
+- Option (2): Diff events are still just the `value`
 
 ---
 
-# Tracking Deletes
+# Tracking Deletes, Updates, Adds
 
-  1. Add an `event type` to the difference event
+  - Add an event `type` to the difference event
+
+```ts
+type DifferenceEvent<T> = {
+  type: 'add' | 'remove',
+  value: T
+};
+```
+
+- `update` is modeled as `remove` followed by `add`
 
 ---
 
@@ -181,11 +178,23 @@ Putting it together
 # Notes:
 
 1. `filter` can be implemented similarly
-2. `join` and `reduce` do need to consider past values. There operators require "memory" to make them incremental.
+2. `join` and `reduce` operators need to consider past values. Require "memory" to make them incremental.
+3. Duplicate entries in a collection can be handled by adding a multiplicity to difference events.
+
+```ts
+type DifferenceEvent<T> = {
+  multiplicity: number; // -N: remove N times. +N: add N times. 0: no-op.
+  value: T;
+};
+```
 
 ---
 
-# Modeling SQL
+# How can we create an incremental query language with incremental `map/reduce/filter/join`?
+
+---
+
+# Example: Modeling SQL
 
 SELECT = `map`
 ```ts
@@ -207,7 +216,7 @@ issues.filter(i => i.priority = 1).filter(i => i.status = 1)
 
 ---
 
-# Modeling SQL
+# Example: Modeling SQL
 
 
 WHERE .. OR .. = `x.filter.concat(x.filter).distinct`
@@ -231,7 +240,7 @@ issues.reduce((acc, issue) => {
 
 ---
 
-# Modeling SQL
+# Example: Modeling SQL
 
 JOIN = `join`
 Custom operator that correlates two streams. Conceptually:
@@ -249,12 +258,12 @@ issues.map(issue => {
 }).filter(row => row !== undefined)
 ```
 
-But updated to handle `difference events` (`{type: 'add', value: v}, {type: 'remove', value: v}`), be incremental and respond to changes in either the `user` or `issue` table.
+But updated to handle `difference events`, be incremental and respond to changes in either the `user` or `issue` table.
 
 ---
 
 # Modeling SQL
-1. Map each SQL construct to an incremental `filter` / `map` / `reduce` / `join` / `concat` / `distinct` operator
+1. Map each language construct to an incremental `filter` / `map` / `reduce` / `join` / `concat` / `distinct` operator
 2. Wire these operators together in a DAG
 
 ---
