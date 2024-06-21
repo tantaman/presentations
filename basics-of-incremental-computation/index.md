@@ -16,7 +16,7 @@ img[alt~="center"] {
 
 # Signals
 
-![width:600px center](./signals.png)
+![width:900px center](./signals2.png)
 
 ---
 
@@ -189,13 +189,39 @@ issues.map(issue => {
 
 But updated to handle `difference events` (`{type: 'add', value: v}, {type: 'remove', value: v}`), be incremental and respond to changes in either the `user` or `issue` table.
 
+---
+
+# Modeling SQL
+1. Map each SQL construct to an incremental `filter` / `map` / `reduce` / `join` / `concat` / `distinct` operator
+2. Wire these operators together in a DAG
+
+---
+
+# Example DAGs
+
+---
+
+# Demo
+
+- Linearite 1 mil
+- ZQL vs SQLite
+
 --- 
 
 # Further Topics
 
 - Subqueries
 - Recursive queries
+- Normalizing queries
 - Sharing structure between pipelines for efficiency
 - First run & query planning
-- Theory: https://github.com/vmware-archive/database-stream-processor/blob/main/doc/vldb23/main.pdf
-- In our new product: https://zerosync.dev/
+- Reducing memory consumption of `join` & `reduce`
+- Re-ordering the DAG
+
+---
+
+# Resources
+
+- Incremental Query Language Theory: https://github.com/vmware-archive/database-stream-processor/blob/main/doc/vldb23/main.pdf
+- Signals: http://adapton.org/
+- In our new product as "ZQL (Zero Query Language)" https://zerosync.dev/
