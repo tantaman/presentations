@@ -9,8 +9,70 @@ img[alt~="center"] {
 }
 </style>
 
-# Incremental Computation
+# Incremental View Maintenance (IVM)
 06/20/2024 - Matt Wonlaw, Rocicorp
+
+---
+
+# Why talk about IVM @ a Local-First event?
+
+---
+
+# Apps have been views over data since the dawn of time
+
+---
+
+```ruby
+# Rails
+User.joins(:tags)
+    .where(tags: { name: ['Brunette', 'Impolite'] } )
+    .group('users.id')
+    .having('count(*) = 2')
+```
+
+```php
+// Laravel
+$users = DB::table('users')
+            ->join('contacts', 'users.id', '=', 'contacts.user_id')
+            ->join('orders', 'users.id', '=', 'orders.user_id')
+            ->select('users.*', 'contacts.phone', 'orders.price')
+            ->get();
+```
+
+---
+
+# But times have changed
+
+- In the Rails and LAMP days, sites were mostly request-response
+  - Full page refresh and full query re-run on modification
+- Today: apps have long persistent sessions with little to no page reloads.
+  - Query results need to be updated as things change.
+  - Queries are subscriptions
+
+---
+
+# Example
+
+```ts
+function IssueList({workspace}) {
+  const issues = useQuery(
+    `SELECT issue.*, user.name FROM issue
+      WHERE workspace_id = ?:workspace
+      JOIN user ON issue.owner_id = user.id
+      ORDER BY modified DESC LIMIT 100`,
+      {workspace}
+  );
+
+  return (
+    <table>
+      <TableHeader />
+      {issues.map(issue => <IssueRow issue={issue} />)}
+    </table>
+  );
+}
+```
+
+As the state in the database changes, the `IssueList` should automatically render the update without us doing anything.
 
 ---
 
