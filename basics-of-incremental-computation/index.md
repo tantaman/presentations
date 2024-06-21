@@ -1,5 +1,12 @@
 ---
 marp: true
+style: |
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 20px;
+  }
 ---
 <!-- class: invert -->
 <style>
@@ -268,7 +275,49 @@ But updated to handle `difference events`, be incremental and respond to changes
 
 ---
 
-# Example DAGs
+Example DAGs
+
+![center width:550px](./ex-dag-1.png)
+
+---
+
+<div class="columns">
+<div>
+
+```sql
+SELECT
+  title,
+  (SELECT
+    json_group_array(json_object(
+      'body', body,
+      'author', (SELECT
+        json_group_array(name)
+        FROM user WHERE user.id = comment.authorId
+      )
+    )) FROM comment
+    WHERE created > x AND comment.issueId = issue.id
+    ORDER BY created ASC LIMIT 10
+   ) AS comments
+FROM issue WHERE modified > x ORDER BY modified DESC LIMIT 100
+```
+
+I.e.,
+
+```ts
+issue.select(
+  'title',
+  iq => iq.related('comments')
+    .select(
+      'body',
+      cq => cq.related('author').select('name')
+    ),
+);
+```
+
+</div>
+<div>
+
+![center width:480px](./ex-dag-2.png)
 
 ---
 
@@ -288,6 +337,8 @@ But updated to handle `difference events`, be incremental and respond to changes
 - First run & query planning
 - Reducing memory consumption of `join` & `reduce`
 - Re-ordering the DAG
+- Index creation
+- Order By & Limit: properties of the `view`
 
 ---
 
