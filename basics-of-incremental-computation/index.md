@@ -307,11 +307,13 @@ I.e.,
 issue.select(
   'title',
   iq => iq.related('comments')
+    .where('created', '>', date)
     .select(
       'body',
       cq => cq.related('author').select('name')
-    ),
-);
+    )
+    .order('created').limit(10),
+).order('modified', 'desc').limit(100);
 ```
 
 </div>
