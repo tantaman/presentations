@@ -25,61 +25,50 @@ img[alt~="center"] {
 
 ---
 
-# Apps have been views over data since the dawn of time
+# Apps are views over data
 
 ---
 
-```ruby
-# Rails
-User.joins(:tags)
-    .where(tags: { name: ['Brunette', 'Impolite'] } )
-    .group('users.id')
-    .having('count(*) = 2')
+<div class="columns">
+<div>
+
+![width:200px](./whatsapp.png)
+
+```sql
+SELECT
+  thread.name,
+  (SELECT array(name) FROM user WHERE user.id IN thread.participants)
+  as participants,
+  (SELECT object(name, date) FROM message 
+    WHERE message.threadId = thread.id LIMIT 1)
+  as lastMessage
+FROM thread;
 ```
 
-```php
-// Laravel
-$users = DB::table('users')
-            ->join('contacts', 'users.id', '=', 'contacts.user_id')
-            ->join('orders', 'users.id', '=', 'orders.user_id')
-            ->select('users.*', 'contacts.phone', 'orders.price')
-            ->get();
+</div>
+<div>
+
+![](./spotify.png)
+
+```sql
+SELECT 
+  track.*,
+  (SELECT array(artist.name) FROM artist
+    JOIN trackArtist WHERE trackArtist.trackId = track.id)
+FROM playlist
+  JOIN trackPlaylist
+  JOIN track
 ```
+
+</div>
+</div>
 
 ---
 
-# But times have changed
 
-- In the Rails and LAMP days, sites were mostly request-response
-  - Full page refresh and full query re-run on modification
-- Today: apps have long persistent sessions with little to no page reloads.
-  - Query results need to be updated as things change.
-  - Queries are subscriptions
+# As the state in the database changes, views should automatically update without us doing anything.
 
----
-
-# Example
-
-```ts
-function IssueList({workspace}) {
-  const issues = useQuery(
-    `SELECT issue.*, user.name FROM issue
-      WHERE workspace_id = ?:workspace
-      JOIN user ON issue.owner_id = user.id
-      ORDER BY modified DESC LIMIT 100`,
-      {workspace}
-  );
-
-  return (
-    <table>
-      <TableHeader />
-      {issues.map(issue => <IssueRow issue={issue} />)}
-    </table>
-  );
-}
-```
-
-As the state in the database changes, the `IssueList` should automatically render the update without us doing anything. No refresh. No re-running the query.
+re-running every query on state change is too expensive.
 
 ---
 
@@ -320,6 +309,9 @@ issue.select(
 <div>
 
 ![center width:480px](./ex-dag-2.png)
+
+</div>
+</div>
 
 ---
 
