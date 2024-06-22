@@ -17,7 +17,7 @@ img[alt~="center"] {
 </style>
 
 # Incremental View Maintenance (IVM)
-06/20/2024 - Matt Wonlaw, Rocicorp
+06/23/2024 - Matt Wonlaw, Rocicorp
 
 ---
 
@@ -66,7 +66,7 @@ FROM playlist
 ---
 
 
-# As the state in the database changes, views should automatically update without us doing anything.
+# As the state in the database changes, views should automatically update.
 
 re-running every query on state change is too expensive.
 
@@ -136,7 +136,7 @@ E.g., `const view = x.map.filter.reduce`
 # Incremental `map`
 `numbers.map(x => x*2)`
 
-![center](./modify-map-double.png)
+![center](./modify-map-double2.png)
 
 ---
 
@@ -186,7 +186,7 @@ type DifferenceEvent<T> = {
 
 ---
 
-# How can we create an incremental query language with incremental `map/reduce/filter/join`?
+# An incremental query language with incremental `map/reduce/filter/join`?
 
 ---
 
@@ -266,7 +266,7 @@ But updated to handle `difference events`, be incremental and respond to changes
 
 Example DAGs
 
-![center width:550px](./ex-dag-1.png)
+![center width:550px](./ex-dag-1-2.png)
 
 ---
 
